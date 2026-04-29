@@ -12,13 +12,18 @@
     <div class="row justify-content-center align-items-center vh-100">
 
         <div class="col-md-6 col-lg-4">
-            <div class="card shadow">
+            <div class="card border-0 shadow-lg rounded-4">
 
-                <div class="card-body">
-                    <h3 class="text-center mb-4">Login</h3>
+                <div class="card-body p-4">
+
+                    <!-- HEADER -->
+                    <div class="text-center mb-4">
+                        <h3 class="fw-bold mb-1">Selamat Datang</h3>
+                        <p class="text-muted small">Login untuk melanjutkan</p>
+                    </div>
 
                     @if(session('error'))
-                        <div class="alert alert-danger">
+                        <div class="alert alert-danger py-2 small">
                             {{ session('error') }}
                         </div>
                     @endif
@@ -27,25 +32,35 @@
                         @csrf
 
                         <div class="mb-3">
-                            <label>Username</label>
-                            <input type="text" name="username" class="form-control" placeholder="Masukkan username">
+                            <label class="form-label small fw-semibold">Username</label>
+                            <input type="text" name="username" class="form-control rounded-3" placeholder="Masukkan username">
                         </div>
 
                         <div class="mb-3">
-                            <label>Password</label>
-                            <input type="password" name="password" class="form-control" placeholder="Masukkan password">
+                            <label class="form-label small fw-semibold">Password</label>
+                            <input type="password" name="password" class="form-control rounded-3" placeholder="Masukkan password">
                         </div>
 
-                        <button class="btn btn-warning w-100">Login</button>
+                        <button class="btn btn-warning w-100 py-2 fw-semibold shadow-sm">
+                            Login
+                        </button>
                     </form>
 
-                    <div class="text-center mt-3">
-                        <a href="/" class="text-decoration-none">← Kembali ke Landing Page</a>
+                    <div class="text-center mt-4">
+                        <a href="/" class="text-decoration-none text-muted small">
+                            ← Kembali ke Landing Page
+                        </a>
                     </div>
 
                 </div>
 
             </div>
+
+            <!-- OPTIONAL SMALL FOOTNOTE -->
+            <p class="text-center text-muted small mt-3 mb-0">
+                © 2026 Money Tracker
+            </p>
+
         </div>
 
     </div>
