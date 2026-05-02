@@ -14,14 +14,15 @@ class TransaksiController extends Controller
             return redirect('/login');
         }
 
-        $allData = Transaksi::orderBy('tanggal', 'asc')->get();
+        // PERBAIKAN: Filter berdasarkan pengguna yang sedang login
+        $allData = Transaksi::where('pengguna_id', session('pengguna_id'))
+            ->orderBy('tanggal', 'asc')
+            ->get();
 
         $dataByDate = [];
         $cumulativeSaldo = 0;
 
         foreach ($allData as $d) {
-
-            // ✅ Pakai WIB + grouping per hari
             $date = Carbon::parse($d->tanggal)
                 ->setTimezone('Asia/Jakarta')
                 ->format('Y-m-d');
@@ -45,32 +46,30 @@ class TransaksiController extends Controller
                 $dataByDate[$date]['pengeluaran'] += $d->jumlah;
                 $cumulativeSaldo -= $d->jumlah;
             }
-
             $dataByDate[$date]['saldo_akhir'] = $cumulativeSaldo;
         }
 
         $dataByDate = array_reverse($dataByDate, true);
         $totalSaldo = $cumulativeSaldo;
 
-        return view('dashboard', compact('dataByDate', 'totalSaldo'));
+        return view('dashboard.index', compact('dataByDate', 'totalSaldo'));
     }
 
     public function index()
     {
-        if (!session('login')) {
-            return redirect('/login');
-        }
+        if (!session('login')) return redirect('/login');
 
-        $data = Transaksi::orderBy('tanggal', 'desc')->get();
+        // Pastikan hanya melihat data sendiri
+        $data = Transaksi::where('pengguna_id', session('pengguna_id'))
+            ->orderBy('tanggal', 'desc')
+            ->get();
 
         return view('transaksi', compact('data'));
     }
 
     public function store(Request $request)
     {
-        if (!session('login')) {
-            return redirect('/login');
-        }
+        if (!session('login')) return redirect('/login');
 
         $request->validate([
             'tanggal' => 'required|date',
@@ -79,27 +78,66 @@ class TransaksiController extends Controller
         ]);
 
         Transaksi::create([
-            'tanggal' => Carbon::parse($request->tanggal)
-                ->setTimezone('Asia/Jakarta'),
+            'tanggal' => Carbon::parse($request->tanggal)->setTimezone('Asia/Jakarta'),
+            'tipe' => $request->tipe,
+            'jumlah' => $request->jumlah,
+            'pengguna_id' => session('pengguna_id'), // Otomatis terikat ke akun yang login
+        ]);
+
+        return redirect('/user')->with('success', 'Transaksi berhasil ditambahkan');
+    }
+
+    public function edit($id)
+    {
+        if (!session('login')) return redirect('/login');
+
+        $transaksi = Transaksi::where('id', $id)
+            ->where('pengguna_id', session('pengguna_id'))
+            ->firstOrFail();
+
+        $data = Transaksi::where('pengguna_id', session('pengguna_id'))
+            ->orderBy('tanggal', 'desc')
+            ->get();
+
+        return view('transaksi', compact('data', 'transaksi'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        if (!session('login')) return redirect('/login');
+
+        $request->validate([
+            'tanggal' => 'required|date',
+            'tipe' => 'required|in:pemasukan,pengeluaran',
+            'jumlah' => 'required|numeric|min:1'
+        ]);
+
+        $transaksi = Transaksi::where('id', $id)
+            ->where('pengguna_id', session('pengguna_id'))
+            ->firstOrFail();
+
+        $transaksi->update([
+            'tanggal' => Carbon::parse($request->tanggal)->setTimezone('Asia/Jakarta'),
             'tipe' => $request->tipe,
             'jumlah' => $request->jumlah,
         ]);
 
-        return redirect('/transaksi')->with('success', 'Transaksi berhasil ditambahkan');
+        return redirect('/user')->with('success', 'Transaksi berhasil diperbarui');
     }
 
     public function destroy($id)
     {
-        if (!session('login')) {
-            return redirect('/login');
-        }
+        if (!session('login')) return redirect('/login');
 
-        $transaksi = Transaksi::find($id);
+        // Tambahkan pengamanan agar tidak bisa hapus transaksi orang lain
+        $transaksi = Transaksi::where('id', $id)
+            ->where('pengguna_id', session('pengguna_id'))
+            ->first();
 
         if ($transaksi) {
             $transaksi->delete();
         }
 
-        return redirect('/transaksi')->with('success', 'Transaksi berhasil dihapus');
+        return redirect('/user')->with('success', 'Transaksi berhasil dihapus');
     }
 }
